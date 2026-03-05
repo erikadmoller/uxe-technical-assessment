@@ -67,3 +67,7 @@ footer nav {
   gap: var(--atp-space-m);
   margin-block-start: var(--atp-space-s);
 }
+
+.field-error {
+  color: var(--atp-color-danger, #dc2626);
+}

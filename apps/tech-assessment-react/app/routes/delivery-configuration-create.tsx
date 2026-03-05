@@ -72,8 +72,20 @@ export default function DeliveryConfigurationCreateRoute() {
 
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [apiErrorMessage, setApiErrorMessage] = useState('');
+  const [errors, setErrors] = useState<Partial<Record<string, boolean>>>({});
 
-  // Refs for web components requiring JS property assignment
+  // Refs for atp-input wrappers (isError JS property)
+  const deliveryNameRef = useRef<HTMLElement>(null);
+  const customerRef = useRef<HTMLElement>(null);
+  const recipientsRef = useRef<HTMLElement>(null);
+  const subjectRef = useRef<HTMLElement>(null);
+  const bodyRef = useRef<HTMLElement>(null);
+  const bucketRef = useRef<HTMLElement>(null);
+  const credentialsFileRef = useRef<HTMLElement>(null);
+  const uploadOptionRef = useRef<HTMLElement>(null);
+  const deliveryFileNameRef = useRef<HTMLElement>(null);
+
+  // Refs for atp-checkbox and atp-button (checked / isLoading JS properties)
   const combineFilesRef = useRef<HTMLElement>(null);
   const compressionRef = useRef<HTMLElement>(null);
   const specificDirectoryRef = useRef<HTMLElement>(null);
@@ -137,6 +149,24 @@ export default function DeliveryConfigurationCreateRoute() {
       })
       .catch(console.error);
   }, []);
+
+  // Sync isError to all atp-input wrappers whenever errors change
+  useEffect(() => {
+    const syncList: Array<[React.RefObject<HTMLElement | null>, string]> = [
+      [deliveryNameRef, 'deliveryName'],
+      [customerRef, 'customer'],
+      [recipientsRef, 'recipients'],
+      [subjectRef, 'subject'],
+      [bodyRef, 'body'],
+      [bucketRef, 'bucket'],
+      [credentialsFileRef, 'credentialsFile'],
+      [uploadOptionRef, 'upload_option'],
+      [deliveryFileNameRef, 'deliveryFileName'],
+    ];
+    for (const [ref, field] of syncList) {
+      if (ref.current) (ref.current as any).isError = !!errors[field];
+    }
+  }, [errors]);
 
   // Sync checkbox `checked` properties to web components
   useEffect(() => {
@@ -210,8 +240,32 @@ export default function DeliveryConfigurationCreateRoute() {
     return () => el.removeEventListener('clickEventOutput', handler);
   }, []);
 
+  const setFieldError = (field: string, value: string) => {
+    setErrors((prev) => ({ ...prev, [field]: value.trim() === '' }));
+  };
+
   const handleSubmit = async () => {
     if (submitState === 'loading') return;
+
+    // Validate all required fields before submitting
+    const requiredFields: string[] = ['deliveryName', 'customer', 'deliveryFileName'];
+    if (form.deliveryLocation === 'email') {
+      requiredFields.push('recipients', 'subject', 'body');
+    } else {
+      requiredFields.push('bucket', 'credentialsFile', 'upload_option');
+    }
+
+    const newErrors: Partial<Record<string, boolean>> = {};
+    for (const field of requiredFields) {
+      const val = form[field as keyof typeof form];
+      newErrors[field] = typeof val === 'string' && val.trim() === '';
+    }
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).some(Boolean)) {
+      return; // block submission — errors are now displayed
+    }
+
     setSubmitState('loading');
 
     const payload: Record<string, unknown> = {
@@ -287,28 +341,42 @@ export default function DeliveryConfigurationCreateRoute() {
           <div className="form-section">
 
             {/* Delivery configuration name */}
-            <atp-input required>
+            <atp-input ref={deliveryNameRef} required>
               <label slot="label" htmlFor="deliveryName">Delivery configuration name</label>
               <input
                 id="deliveryName"
                 type="text"
                 value={form.deliveryName}
-                onChange={(e) => updateField('deliveryName', e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  updateField('deliveryName', val);
+                  setFieldError('deliveryName', val);
+                }}
               />
+              {errors.deliveryName && (
+                <span slot="help-text" className="field-error">This field is required.</span>
+              )}
             </atp-input>
 
             {/* Customer */}
-            <atp-input required>
+            <atp-input ref={customerRef} required>
               <label slot="label" htmlFor="customer">Customer</label>
               <input
                 id="customer"
                 type="text"
                 value={form.customer}
-                onChange={(e) => updateField('customer', e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  updateField('customer', val);
+                  setFieldError('customer', val);
+                }}
               />
+              {errors.customer && (
+                <span slot="help-text" className="field-error">This field is required.</span>
+              )}
             </atp-input>
 
-            {/* Delivery frequency */}
+            {/* Delivery frequency (optional — no validation) */}
             <atp-input>
               <label slot="label" htmlFor="deliveryFrequency">
                 Delivery frequency in cron format
@@ -328,7 +396,7 @@ export default function DeliveryConfigurationCreateRoute() {
               </span>
             </atp-input>
 
-            {/* Last file suffix */}
+            {/* Last file suffix (optional — no validation) */}
             <atp-input>
               <label slot="label" htmlFor="lastFileSuffix">Last file suffix</label>
               <input
@@ -364,34 +432,55 @@ export default function DeliveryConfigurationCreateRoute() {
             {/* Conditional: email fields */}
             {form.deliveryLocation === 'email' && (
               <div className="conditional-section">
-                <atp-input required>
+                <atp-input ref={recipientsRef} required>
                   <label slot="label" htmlFor="recipients">Recipient email</label>
                   <input
                     id="recipients"
                     type="text"
                     value={form.recipients}
-                    onChange={(e) => updateField('recipients', e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateField('recipients', val);
+                      setFieldError('recipients', val);
+                    }}
                   />
+                  {errors.recipients && (
+                    <span slot="help-text" className="field-error">This field is required.</span>
+                  )}
                 </atp-input>
 
-                <atp-input required>
+                <atp-input ref={subjectRef} required>
                   <label slot="label" htmlFor="subject">Subject</label>
                   <input
                     id="subject"
                     type="text"
                     value={form.subject}
-                    onChange={(e) => updateField('subject', e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateField('subject', val);
+                      setFieldError('subject', val);
+                    }}
                   />
+                  {errors.subject && (
+                    <span slot="help-text" className="field-error">This field is required.</span>
+                  )}
                 </atp-input>
 
-                <atp-input required textarea>
+                <atp-input ref={bodyRef} required textarea>
                   <label slot="label" htmlFor="body">Body</label>
                   <textarea
                     id="body"
                     rows={3}
                     value={form.body}
-                    onChange={(e) => updateField('body', e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateField('body', val);
+                      setFieldError('body', val);
+                    }}
                   />
+                  {errors.body && (
+                    <span slot="help-text" className="field-error">This field is required.</span>
+                  )}
                 </atp-input>
               </div>
             )}
@@ -399,48 +488,78 @@ export default function DeliveryConfigurationCreateRoute() {
             {/* Conditional: cloud fields */}
             {form.deliveryLocation !== 'email' && (
               <div className="conditional-section">
-                <atp-input required>
+                <atp-input ref={bucketRef} required>
                   <label slot="label" htmlFor="bucket">Bucket</label>
                   <input
                     id="bucket"
                     type="text"
                     value={form.bucket}
-                    onChange={(e) => updateField('bucket', e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateField('bucket', val);
+                      setFieldError('bucket', val);
+                    }}
                   />
+                  {errors.bucket && (
+                    <span slot="help-text" className="field-error">This field is required.</span>
+                  )}
                 </atp-input>
 
-                <atp-input required>
+                <atp-input ref={credentialsFileRef} required>
                   <label slot="label" htmlFor="credentialsFile">Credentials file</label>
                   <input
                     id="credentialsFile"
                     type="text"
                     value={form.credentialsFile}
-                    onChange={(e) => updateField('credentialsFile', e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateField('credentialsFile', val);
+                      setFieldError('credentialsFile', val);
+                    }}
                   />
+                  {errors.credentialsFile && (
+                    <span slot="help-text" className="field-error">This field is required.</span>
+                  )}
                 </atp-input>
 
-                <atp-input required>
+                <atp-input ref={uploadOptionRef} required>
                   <label slot="label" htmlFor="uploadOption">Upload option</label>
                   <input
                     id="uploadOption"
                     type="text"
                     value={form.upload_option}
-                    onChange={(e) => updateField('upload_option', e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateField('upload_option', val);
+                      setFieldError('upload_option', val);
+                    }}
                   />
+                  {errors.upload_option && (
+                    <span slot="help-text" className="field-error">This field is required.</span>
+                  )}
                 </atp-input>
               </div>
             )}
 
             {/* Delivery file name */}
-            <atp-input required>
+            <atp-input ref={deliveryFileNameRef} required>
               <label slot="label" htmlFor="deliveryFileName">Delivery file name</label>
               <input
                 id="deliveryFileName"
                 type="text"
                 value={form.deliveryFileName}
-                onChange={(e) => updateField('deliveryFileName', e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  updateField('deliveryFileName', val);
+                  setFieldError('deliveryFileName', val);
+                }}
               />
-              <span slot="help-text">input can only contain letters, numbers, -, and _</span>
+              <span slot="help-text">
+                {errors.deliveryFileName && (
+                  <span className="field-error">This field is required.<br /></span>
+                )}
+                input can only contain letters, numbers, -, and _
+              </span>
             </atp-input>
 
             {/* Combine files */}
