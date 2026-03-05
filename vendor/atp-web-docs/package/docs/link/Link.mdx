@@ -1,0 +1,22 @@
+import {Meta, Typeset, Unstyled, Story, Canvas, Source} from '@storybook/addon-docs/blocks';
+import * as LinkStories from './link.stories';
+
+<Meta of={LinkStories} title="Components/Link" />
+
+# Link
+
+Lift's default links are just regular `<a>` tags.
+
+<Canvas of={LinkStories.Primary} />
+
+## Minimal
+
+"Minimal" links look like normal text until they are in a hover or focus state.
+
+<Canvas of={LinkStories.Minimal} />
+
+## Inverse
+
+"Inverse" links are for dark backgrounds.
+
+<Canvas of={LinkStories.Inverse} />

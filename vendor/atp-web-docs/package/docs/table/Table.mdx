@@ -1,0 +1,67 @@
+import {Meta, Typeset, Unstyled, Story, Canvas, Source} from '@storybook/addon-docs/blocks';
+import * as TableStories from './table.stories';
+
+<Meta of={TableStories} title="Components/Table" />
+
+# Table
+
+Table displays a collection of data grouped into rows and columns.
+
+Tables should only be used for tabular collections of interrelated data &mdash;
+not for layout, nor for key-value pairs (use
+[DescriptionList](/docs/components-descriptionlist--descriptionlist) for those).
+
+Table is not a web component, but instead a set of CSS class(es) which you add onto the native
+HTML elements such as `<table>`, `<tr>`, `<th>`, `<td>`, etc.
+
+<Canvas of={TableStories.Primary} />
+
+## Cell Alignment
+
+You can align a table cell's text light, center, or right.
+
+You can also add the "nowrap" option to a cell to prevents its contents
+from line-wrapping.
+
+<Canvas of={TableStories.CellAlignment} />
+
+## Borders
+
+By default, Table has cell borders, but you can use:
+
+- the "borderless" option
+- the "outer border" option, where there's just a border around the outside, but no borders between cells
+- the "inner borders" option, where there are borders between cells, but no border around the outside
+
+<Canvas of={TableStories.Borders} />
+
+## Header Fill
+
+You can give the table header a fill color.
+
+<Canvas of={TableStories.HeaderFill} />
+
+## Scroll Container
+
+Tables cannot easily adapt to look good on smaller displays.
+If your table is likely to be wider than the screen, wrap it in a table scroll container.
+This will allow the user to scroll the table left
+and right, and will add the necessary accessibility support.
+
+Tables that use this feature can't use a `<caption>` tag inside the table, since the
+caption would scroll with the
+table. Instead, use an external heading with class
+`atp-table-caption`, and give the table an `aria-describedby` attribute whose
+value is the id of the external heading.
+
+<Canvas of={TableStories.ScrollContainer} />
+
+## "Description" Tables
+
+This feature gives Tables the same visual look as
+[Description List](/docs/components-descriptionlist--descriptionlist), so that the
+two will harmonize when used next to each other.
+It also provides a hover/focus
+state for the rows in the table.
+
+<Canvas of={TableStories.Description} />

@@ -1,0 +1,229 @@
+import {Meta, Typeset, Unstyled, Story, Source} from '@storybook/addon-docs/blocks';
+import * as TypographyStories from './typography-example.stories';
+
+<Meta title="Foundations/Typography" />
+
+# Typography
+
+**Jump to:** [Usage](#using-typography) | [Content Standard Examples](#content-standard-examples) | [Web Components](#using-typography-in-web-components)
+
+Our base font is **Inter**, a variable font with [many OpenType features](https://rsms.me/inter/#features).
+It is available by default in Figma, although you can also [download](https://rsms.me/inter/) the font files; it is free and open-source.
+
+We use five standard weights: 300 (light), 400 (regular), 500 (medium), 600 (semibold), 700 (bold). "Regular" is the default for most elements.
+
+## Using Typography In Your Application
+
+Our typography styles use CSS classes, rather than web components. To set type, you apply the relevant CSS class(es) to your element.
+
+You should not need to create custom style definitions for typography styles;
+the library's CSS classes should provide all you need.
+
+### Translating Figma to code
+
+For instance, let's say you used Figma in Dev Mode and saw this:
+
+```css
+/* Heading/L/Semi Bold/Default */
+font-family: Inter;
+font-size: 48px;
+font-style: normal;
+font-weight: 600;
+line-height: 52px; /* 108.333% */
+```
+
+You don't want to drop that CSS raw into your application! Instead, notice that the
+text is a Heading size Large, with a weight of Semi Bold. So you'd want to add these
+classes to your HTML:
+
+```html
+<someHTMLtag class="atp-heading-l atp-font-weight-semibold"></someHTMLtag>
+```
+
+### Overview
+
+---
+
+<Story of={TypographyStories.Headings} />
+<br />
+<Story of={TypographyStories.Body} />
+<br />
+<Story of={TypographyStories.FontWeights} />
+
+### Heading Extra Large
+
+---
+
+<Story of={TypographyStories.HeadingXL} />
+
+```css
+class="atp-heading-xl"
+```
+
+### Heading Large
+
+---
+
+<Story of={TypographyStories.HeadingL} />
+
+```css
+class="atp-heading-l"
+```
+
+### Heading Medium
+
+---
+
+<Story of={TypographyStories.HeadingM} />
+
+```css
+class="atp-heading-m"
+```
+
+### Heading Small
+
+---
+
+<Story of={TypographyStories.HeadingS} />
+
+```css
+class="atp-heading-s"
+```
+
+### Heading Extra Small
+
+---
+
+<Story of={TypographyStories.HeadingXS} />
+
+```css
+class="atp-heading-xs"
+```
+
+### Body Large
+
+---
+
+<Story of={TypographyStories.BodyL} />
+
+```css
+<p class="atp-body-l">
+```
+
+### Body Medium
+
+---
+
+<Story of={TypographyStories.BodyM} />
+
+```css
+<p class="atp-body-m">
+```
+
+### Body Small
+
+---
+
+<Story of={TypographyStories.BodyS} />
+
+```css
+<p class="atp-body-s">
+```
+
+### Body Extra Small
+
+---
+
+<Story of={TypographyStories.BodyXS} />
+
+```css
+<p class="atp-body-xs">
+```
+
+### Font Weight Bold
+
+---
+
+<Story of={TypographyStories.FontWeightBold} />
+
+```css
+class="atp-font-weight-bold"
+```
+
+### Font Weight Semibold
+
+---
+
+<Story of={TypographyStories.FontWeightSemiBold} />
+
+```css
+class="atp-font-weight-semibold"
+```
+
+### Font Weight Medium
+
+---
+
+<Story of={TypographyStories.FontWeightMedium} />
+
+```css
+class="atp-font-weight-medium"
+```
+
+### Font Weight Regular
+
+---
+
+<Story of={TypographyStories.FontWeightRegular} />
+
+```css
+class="atp-font-weight-regular"
+```
+
+### Font Weight Light
+
+---
+
+<Story of={TypographyStories.FontWeightLight} />
+
+```css
+class="atp-font-weight-light"
+```
+
+### Colors
+
+To see how to set a font color, please see the [Colors](?path=/docs/foundations-docs--docs) page.
+
+---
+
+## Content Standard Examples
+
+<Story of={TypographyStories.Primary} />
+
+<Source of={TypographyStories.Primary} />
+
+### Using Typography In Web Components
+
+---
+
+Since web components exist in the shadow DOM, they do not inherit any of the
+CSS classes from the global stylesheet, which is where the typographic
+classes are defined. Thus, if you are creating a web component, you'll need to use and apply
+the _design tokens_ that were used to construct those typographic classes.
+
+For instance, this is the definition for a typographic class:
+
+```css
+.atp-font-weight-bold {
+  font-weight: var(--atp-font-weight-bold);
+}
+```
+
+If the design for your web component calls for "FontWeightBold", you will need
+to add this CSS to the styling for your web component:
+
+```css
+.my-web-component {
+  font-weight: var(--atp-font-weight-bold);
+}
+```

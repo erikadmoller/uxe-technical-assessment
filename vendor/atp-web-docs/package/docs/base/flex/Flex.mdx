@@ -1,0 +1,29 @@
+import {Meta, Typeset, Unstyled, Story, Source} from '@storybook/addon-docs/blocks';
+
+<Meta title="Utilities/Flex" />
+
+# Flex
+
+Lift provides a collection of convenience CSS classes that
+will apply CSS flex properties to an element.
+These allow you to easily use flexbox to create complex layouts without having to add a stylesheet
+or resort to inline styling.
+
+These classes are of the format `atp-`, followed by the name of the CSS property,
+followed by a dash, followed by the CSS value.
+For instance, to add `display: inline-flex` to an element,
+give it the CSS class `atp-display-inline-flex`.
+
+These classes are available for:
+
+- `display: flex` and `display: inline-flex`
+- `flex-direction`
+- `flex-wrap`
+- `justify-content`
+- `align-content`
+- `align-items`
+- `align-self`
+
+Additionally, we support the `gap` property, with values corresponding to the "t-shirt sizes"
+of our spacing system. For instance, to give an element a gap of spacing size M, give it CSS
+class `atp-gap-m`.

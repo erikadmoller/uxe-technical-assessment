@@ -1,0 +1,59 @@
+import {Meta, Typeset, Unstyled, Story, Canvas, Source} from '@storybook/addon-docs/blocks';
+import * as DlStories from './dl.stories';
+
+<Meta of={DlStories} title="Components/DescriptionList" />
+
+# Description List
+
+Description List (DL) is used to create a list of key-value pairs, or a list of terms and
+their descriptions. It consists of a list of pairs of Description Terms (the "keys" on the left)
+and Description Details (the "values" on the right).
+
+Description List is not a web component, but instead a CSS class(es) which you add onto the
+native HTML `<dl>`, `<dt>`, and `<dd>` elements.
+
+<Canvas of={DlStories.Primary} />
+
+## Tags and Connectors
+
+You can place a Tag inside a Description Term, and it will be positioned
+at the top right.
+
+The Description Details may feature a "connector" phrase that connects the details to the Term.
+You can create this lighter-colored "connector" using our font
+[Colors](?path=/docs/foundations-colors--docs).
+
+<Canvas of={DlStories.TagsAndConnectors} />
+
+## Nested List inside the Details
+
+When there are multiple items in the details, use a List With Vertical Dividers component
+to separate them. Use a `<ul>` if the items are a simple list,
+or `<dl>` if the items consist of name-value pairs.
+
+<Canvas of={DlStories.NestedListInsideDetails} />
+
+## Custom Width
+
+By default, the Description Terms will be as wide as they need to be to hold their contents.
+You can customize their width using custom CSS,
+setting a value for the `--atp-dl-dt-width` CSS custom property.
+
+<Canvas of={DlStories.CustomWidth} />
+
+## Borderless
+
+The borderless option removes the internal borders between the cells of the list.
+
+<Canvas of={DlStories.Borderless} />
+
+## With a "description" Table
+
+Some UIs need both a Description List for key-value pairs, but also need tables that have a
+similar visual look. The "description" variant for the Table component provides this.
+
+<Canvas of={DlStories.WithDescriptionTable} />
+
+## Indented
+
+<Canvas of={DlStories.Indented} />

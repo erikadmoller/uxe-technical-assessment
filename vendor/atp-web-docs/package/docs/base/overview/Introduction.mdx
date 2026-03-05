@@ -1,0 +1,83 @@
+import {Meta, Typeset, Unstyled, Story, Source} from '@storybook/addon-docs/blocks';
+import '../../card/card';
+import '../../button/button';
+import bannerUrl from './lift-banner-image.jpg';
+
+<Meta title="Overview/Introduction" />
+
+<div className="lift-intro">
+
+    <div className="lift-intro-banner">
+    <div className="lift-intro-banner-inner">
+        <div className="lift-intro-banner-content atp-color-inverse">
+            <h1 className="lift-heading atp-color-inverse" style={{fontSize: '100px', lineHeight: '1em', margin: '0'}}>Lift</h1>
+
+            ATPCO’s new design system – a user experience feature that unites and accelerates design and engineering across our web offerings.
+
+            <a href="/?path=/docs/overview-getting-started--docs">
+                <atp-button label="Get started" appearance="outline" color="primary" size="large"></atp-button>
+            </a>
+        </div>
+        </div>
+    </div>
+
+    <div className="lift-intro-content">
+
+        <atp-card style={{marginBottom: 'var(--atp-space-xl)'}}>
+            <atp-card-header slot="header">
+            <h2>What is a design system?</h2>
+            </atp-card-header>
+
+            A design system is a set of user interface building blocks and standards that promote a consistent user experience.
+            A design system includes both Figma components (for designers) and code components (for engineers), so it unites and synchronizes the disciplines, creating a common vocabulary for both.
+
+            Think of a design system as the set of Lego bricks that teams use to build web applications and websites.
+            The design system acts as an accelerator: teams use these prebuilt, ready-to-go blocks to build new experiences quickly, easily, and at scale.
+            Moreover, since the blocks use common visuals and branding, every project that uses the design system easily shares that look.
+            This consistent visual experience draws a connection between ATPCO’s various applications, thus strengthening our brand identity and our credibility as a technology provider.
+
+            By using a design system, we gain advantages of scale _and_ gain visual consistency!
+
+        </atp-card>
+
+        <atp-card>
+            <atp-card-header slot="header">
+                <h2>The name Lift</h2>
+            </atp-card-header>
+
+            We chose a name that evokes a spirit of upward momentum, and of elevating both people and experiences.
+            Lift raises ATPCO’s product teams by enabling faster innovation and more seamless collaboration across disciplines.
+            For customers, it creates an ecosystem that removes friction and helps them soar.
+
+            So we wanted a name that was accessible yet expressed this aspirational tone. “Lift” captures our mission without sounding intimidating or technical.
+
+        </atp-card>
+
+        <atp-card>
+            <atp-card-header slot="header">
+                <h2>Why a new design system?</h2>
+            </atp-card-header>
+
+            Our older design system, called Hub, wasn’t sufficiently flexible to meet our modern needs.
+            It only worked in Angular, it didn’t support modern web standards, and it tied us to older visuals.
+
+            We wanted to learn from those lessons, so we could build something flexible and cross-framework that will meet ATPCO’s future needs.
+
+        </atp-card>
+
+        <div className="lift-intro-footer">
+
+            <h2> Ready to explore Lift?</h2>
+
+            <div className="lift-intro-footer-slogan">
+            Learn how to use Lift's components, patterns, and principles to build modern, cohesive ATPCO experiences.
+            </div>
+
+            <a href="/?path=/docs/overview-getting-started--docs">
+                <atp-button label="Get started" appearance="fill" color="primary"></atp-button>
+            </a>
+        </div>
+
+    </div>
+
+</div>

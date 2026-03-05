@@ -1,0 +1,21 @@
+{
+  "name": "@atpco/atp-web-docs",
+  "version": "0.16.0",
+  "description": "MDX and Storybook stories for @atpco/atp-web",
+  "license": "MIT",
+  "files": [
+    "docs",
+    "index.json",
+    "index.md",
+    "CHANGELOG.md",
+    "README.md",
+    "package.json"
+  ],
+  "publishConfig": {
+    "registry": "http://artmgt01.atpco.org:8081/repository/atp-npm/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://atpco.ghe.com/ProductDesign/Design-System.git"
+  }
+}
