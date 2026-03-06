@@ -53,6 +53,7 @@ declare global {
         label?: string;
         appearance?: "fill" | "outline" | "text";
         disabled?: boolean;
+        isLoading?: boolean;
         ref?: React.Ref<HTMLElement>;
       };
       "atp-alert": React.HTMLAttributes<HTMLElement> & {
@@ -60,6 +61,26 @@ declare global {
         appearance?: "full" | "page" | "expandable" | "toast";
         color?: "danger" | "warning" | "info";
         hasClose?: boolean;
+        ref?: React.Ref<HTMLElement>;
+      };
+      "atp-card": React.HTMLAttributes<HTMLElement> & {
+        density?: "default" | "compact" | "wide";
+        divider?: "default" | "header" | "footer" | "both";
+        collapsible?: boolean;
+        open?: boolean;
+        fullBleed?: boolean;
+        ref?: React.Ref<HTMLElement>;
+      };
+      "atp-card-header": React.HTMLAttributes<HTMLElement> & {
+        density?: "default" | "compact" | "wide";
+        ref?: React.Ref<HTMLElement>;
+      };
+      "atp-card-footer": React.HTMLAttributes<HTMLElement> & {
+        density?: "default" | "compact" | "wide";
+        ref?: React.Ref<HTMLElement>;
+      };
+      "atp-dropdown": React.HTMLAttributes<HTMLElement> & {
+        slot?: string;
         ref?: React.Ref<HTMLElement>;
       };
     }

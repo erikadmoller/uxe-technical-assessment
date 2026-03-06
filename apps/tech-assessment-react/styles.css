@@ -25,49 +25,21 @@ footer nav {
   margin-block-start: var(--atp-space-l);
 }
 
-.conditional-section {
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  padding: var(--atp-space-s);
+.conditional-fields {
   display: flex;
   flex-direction: column;
   gap: var(--atp-space-m);
 }
 
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--atp-space-xs, 4px);
-}
-
-.form-field label {
-  font-size: 0.875rem;
-}
-
-.form-field select {
-  height: 40px;
-  padding-inline: var(--atp-space-xs) calc(var(--atp-space-xs) + 1.25rem);
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-family: inherit;
-  background-color: #fff;
-  cursor: pointer;
-  width: 50%;
-}
-
-.form-field select:focus {
-  outline: 2px solid #2563eb;
-  outline-offset: 1px;
-}
 
 .form-actions {
   display: flex;
   align-items: center;
   gap: var(--atp-space-m);
   margin-block-start: var(--atp-space-s);
+  bottom: var(--atp-space-m);
 }
 
 .field-error {
-  color: var(--atp-color-danger, #dc2626);
+  color: var(--atp-color-danger);
 }

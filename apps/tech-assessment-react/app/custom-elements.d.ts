@@ -6,9 +6,19 @@ declare global {
       'atp-header': HTMLAttributes<HTMLElement>;
       'atp-sidebar': HTMLAttributes<HTMLElement>;
       'atp-breadcrumbs': HTMLAttributes<HTMLElement>;
-      'atp-card': HTMLAttributes<HTMLElement>;
-      'atp-card-header': HTMLAttributes<HTMLElement>;
-      'atp-card-footer': HTMLAttributes<HTMLElement>;
+      'atp-card': HTMLAttributes<HTMLElement> & {
+        density?: 'default' | 'compact' | 'wide';
+        divider?: 'default' | 'header' | 'footer' | 'both';
+        collapsible?: boolean;
+        open?: boolean;
+        fullBleed?: boolean;
+      };
+      'atp-card-header': HTMLAttributes<HTMLElement> & {
+        density?: 'default' | 'compact' | 'wide';
+      };
+      'atp-card-footer': HTMLAttributes<HTMLElement> & {
+        density?: 'default' | 'compact' | 'wide';
+      };
       'atp-button': HTMLAttributes<HTMLElement> & {
         label?: string;
         appearance?: 'fill' | 'outline' | 'text';

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BreadcrumbItem, SidebarItem } from '@atpco/atp-web';
+import type { BreadcrumbItem, MenuListItem, SidebarItem } from '@atpco/atp-web';
 
 type DeliveryLocation = 'email' | 'gcloud' | 'azure' | 's3';
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
@@ -36,12 +36,46 @@ const BREADCRUMB_ITEMS: BreadcrumbItem[] = [
   { name: 'Delivery configuration', href: '/delivery-configuration' },
 ];
 
-const LOCATION_OPTIONS: { value: DeliveryLocation; label: string }[] = [
-  { value: 'email', label: 'Email' },
-  { value: 'gcloud', label: 'GCloud' },
-  { value: 'azure', label: 'Azure' },
-  { value: 's3', label: 'S3' },
+const LOCATION_ITEMS: MenuListItem[] = [
+  { id: 'email', name: 'Email' },
+  { id: 'gcloud', name: 'GCloud' },
+  { id: 'azure', name: 'Azure' },
+  { id: 's3', name: 'S3' },
 ];
+
+const TEST_DATA = {
+  deliveryName: 'Daily Sales Export',
+  customer: 'Acme Travel',
+  deliveryFrequency: '20****',
+  last_file_suffix: '_20260214',
+  deliveryLocation: 'email' as DeliveryLocation,
+  recipients: 'ops@example.com',
+  subject: 'Delivery Complete',
+  body: 'Your delivery is complete.',
+  bucket: '',
+  credentialsFile: '',
+  upload_option: '',
+  deliveryFileName: 'sales-export',
+  combineFiles: true,
+  maximumFileSize: 5,
+  compression: true,
+  specificDirectory: true,
+  virusScan: true,
+  encrypt: true,
+};
+
+function fetchDeliveries() {
+  fetch('/api/three-v-deliveries')
+    .then((r) => r.json())
+    .then(({ data }) => {
+      const sorted = [...data].sort(
+        (a: { acceptedAt: string }, b: { acceptedAt: string }) =>
+          new Date(a.acceptedAt).getTime() - new Date(b.acceptedAt).getTime(),
+      );
+      console.log('Existing delivery configurations (oldest → newest):', sorted);
+    })
+    .catch(console.error);
+}
 
 export default function DeliveryConfigurationCreateRoute() {
   const [activeSidebarId, setActiveSidebarId] = useState('delivery-configuration');
@@ -73,6 +107,7 @@ export default function DeliveryConfigurationCreateRoute() {
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [apiErrorMessage, setApiErrorMessage] = useState('');
   const [errors, setErrors] = useState<Partial<Record<string, boolean>>>({});
+  const [locationMenuVisible, setLocationMenuVisible] = useState(false);
 
   // Refs for atp-input wrappers (isError JS property)
   const deliveryNameRef = useRef<HTMLElement>(null);
@@ -85,6 +120,8 @@ export default function DeliveryConfigurationCreateRoute() {
   const uploadOptionRef = useRef<HTMLElement>(null);
   const deliveryFileNameRef = useRef<HTMLElement>(null);
 
+  const locationDropdownRef = useRef<HTMLElement>(null);
+
   // Refs for atp-checkbox and atp-button (checked / isLoading JS properties)
   const combineFilesRef = useRef<HTMLElement>(null);
   const compressionRef = useRef<HTMLElement>(null);
@@ -92,6 +129,9 @@ export default function DeliveryConfigurationCreateRoute() {
   const virusScanRef = useRef<HTMLElement>(null);
   const encryptRef = useRef<HTMLElement>(null);
   const submitBtnRef = useRef<HTMLElement>(null);
+  const fillFormBtnRef = useRef<HTMLElement>(null);
+  const forceErrorBtnRef = useRef<HTMLElement>(null);
+  const alertRef = useRef<HTMLElement>(null);
 
   // Layout setup: header, sidebar, breadcrumbs
   useEffect(() => {
@@ -138,16 +178,7 @@ export default function DeliveryConfigurationCreateRoute() {
 
   // GET on mount: log existing configs sorted by acceptedAt oldest → newest
   useEffect(() => {
-    fetch('/api/three-v-deliveries')
-      .then((r) => r.json())
-      .then(({ data }) => {
-        const sorted = [...data].sort(
-          (a: { acceptedAt: string }, b: { acceptedAt: string }) =>
-            new Date(a.acceptedAt).getTime() - new Date(b.acceptedAt).getTime(),
-        );
-        console.log('Existing delivery configurations (oldest → newest):', sorted);
-      })
-      .catch(console.error);
+    fetchDeliveries();
   }, []);
 
   // Sync isError to all atp-input wrappers whenever errors change
@@ -167,6 +198,40 @@ export default function DeliveryConfigurationCreateRoute() {
       if (ref.current) (ref.current as any).isError = !!errors[field];
     }
   }, [errors]);
+
+  // Sync atp-dropdown properties whenever menu visibility or selection changes
+  useEffect(() => {
+    const el = locationDropdownRef.current;
+    if (!el) return;
+    (el as any).itemsList = LOCATION_ITEMS;
+    (el as any).activeIds = [form.deliveryLocation];
+    (el as any).isMenuVisible = locationMenuVisible;
+    (el as any).closeOnClickOutside = true;
+  }, [form.deliveryLocation, locationMenuVisible]);
+
+  // Handle item selection from atp-dropdown
+  useEffect(() => {
+    const el = locationDropdownRef.current;
+    if (!el) return;
+    const handler = (e: Event) => {
+      const ids = (e as CustomEvent<string[]>).detail;
+      if (ids.length > 0) {
+        setForm((prev) => ({ ...prev, deliveryLocation: ids[0] as DeliveryLocation }));
+        setLocationMenuVisible(false);
+      }
+    };
+    el.addEventListener('itemSelectedOutput', handler);
+    return () => el.removeEventListener('itemSelectedOutput', handler);
+  }, []);
+
+  // Sync close when dropdown closes externally (e.g. click outside)
+  useEffect(() => {
+    const el = locationDropdownRef.current;
+    if (!el) return;
+    const handler = () => setLocationMenuVisible(false);
+    el.addEventListener('dropdownClosedOutput', handler);
+    return () => el.removeEventListener('dropdownClosedOutput', handler);
+  }, []);
 
   // Sync checkbox `checked` properties to web components
   useEffect(() => {
@@ -189,14 +254,6 @@ export default function DeliveryConfigurationCreateRoute() {
   useEffect(() => {
     if (encryptRef.current) (encryptRef.current as any).checked = form.encrypt;
   }, [form.encrypt]);
-
-  // Sync submit button loading/disabled state
-  useEffect(() => {
-    const btn = submitBtnRef.current;
-    if (!btn) return;
-    (btn as any).disabled = submitState === 'loading';
-    (btn as any).isLoading = submitState === 'loading';
-  }, [submitState]);
 
   // clickEventOutput listeners for each checkbox
   useEffect(() => {
@@ -240,14 +297,90 @@ export default function DeliveryConfigurationCreateRoute() {
     return () => el.removeEventListener('clickEventOutput', handler);
   }, []);
 
+  // Scroll button into view after alert appears and pushes it down
+  useEffect(() => {
+    if (submitState === 'success' || submitState === 'error') {
+      submitBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      setTimeout(() => window.scrollBy({ top: 80, behavior: 'smooth' }), 300);
+    }
+  }, [submitState]);
+
+  // Close alert when user clicks the X button
+  useEffect(() => {
+    const el = alertRef.current;
+    if (!el) return;
+    const handler = () => setSubmitState('idle');
+    el.addEventListener('closeEventOutput', handler);
+    return () => el.removeEventListener('closeEventOutput', handler);
+  }, [submitState]); // re-run when submitState changes so ref is current after alert mounts
+
   const setFieldError = (field: string, value: string) => {
     setErrors((prev) => ({ ...prev, [field]: value.trim() === '' }));
+  };
+
+  const fillTestData = () => {
+    setForm(TEST_DATA);
+    setErrors({});
+  };
+
+  const doSubmit = async (data: typeof form, endpoint: string) => {
+    setSubmitState('loading');
+
+    const payload: Record<string, unknown> = {
+      deliveryName: data.deliveryName,
+      customer: data.customer,
+      deliveryLocation: data.deliveryLocation,
+      deliveryFileName: data.deliveryFileName,
+      combineFiles: data.combineFiles,
+      specificDirectory: data.specificDirectory,
+      virusScan: data.virusScan,
+      encrypt: data.encrypt,
+    };
+
+    if (data.deliveryFrequency) payload['deliveryFrequency'] = data.deliveryFrequency;
+    if (data.last_file_suffix) payload['last_file_suffix'] = data.last_file_suffix;
+
+    if (data.deliveryLocation === 'email') {
+      payload['recipients'] = data.recipients;
+      payload['subject'] = data.subject;
+      payload['body'] = data.body;
+    } else {
+      payload['bucket'] = data.bucket;
+      payload['credentialsFile'] = data.credentialsFile;
+      payload['upload_option'] = data.upload_option;
+    }
+
+    if (data.combineFiles) {
+      payload['maximumFileSize'] = data.maximumFileSize;
+      payload['compression'] = data.compression;
+    }
+
+    try {
+      const [res] = await Promise.all([
+        fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }),
+        new Promise((resolve) => setTimeout(resolve, 700)),
+      ]);
+
+      if (res.ok) {
+        setSubmitState('success');
+      } else {
+        const data = await res.json();
+        setApiErrorMessage(data.message && 'Submission failed. Please reload the page and try again.');
+        setSubmitState('error');
+      }
+    } catch {
+      setApiErrorMessage('Network error. Please reload the page and try again.');
+      setSubmitState('error');
+    }
   };
 
   const handleSubmit = async () => {
     if (submitState === 'loading') return;
 
-    // Validate all required fields before submitting
     const requiredFields: string[] = ['deliveryName', 'customer', 'deliveryFileName'];
     if (form.deliveryLocation === 'email') {
       requiredFields.push('recipients', 'subject', 'body');
@@ -263,58 +396,16 @@ export default function DeliveryConfigurationCreateRoute() {
     setErrors(newErrors);
 
     if (Object.values(newErrors).some(Boolean)) {
-      return; // block submission — errors are now displayed
+      return;
     }
 
-    setSubmitState('loading');
+    await doSubmit(form, '/api/three-v-deliveries');
+  };
 
-    const payload: Record<string, unknown> = {
-      deliveryName: form.deliveryName,
-      customer: form.customer,
-      deliveryLocation: form.deliveryLocation,
-      deliveryFileName: form.deliveryFileName,
-      combineFiles: form.combineFiles,
-      specificDirectory: form.specificDirectory,
-      virusScan: form.virusScan,
-      encrypt: form.encrypt,
-    };
-
-    if (form.deliveryFrequency) payload['deliveryFrequency'] = form.deliveryFrequency;
-    if (form.last_file_suffix) payload['last_file_suffix'] = form.last_file_suffix;
-
-    if (form.deliveryLocation === 'email') {
-      payload['recipients'] = form.recipients;
-      payload['subject'] = form.subject;
-      payload['body'] = form.body;
-    } else {
-      payload['bucket'] = form.bucket;
-      payload['credentialsFile'] = form.credentialsFile;
-      payload['upload_option'] = form.upload_option;
-    }
-
-    if (form.combineFiles) {
-      payload['maximumFileSize'] = form.maximumFileSize;
-      payload['compression'] = form.compression;
-    }
-
-    try {
-      const res = await fetch('/api/three-v-deliveries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        setSubmitState('success');
-      } else {
-        const data = await res.json();
-        setApiErrorMessage(data.message ?? 'Submission failed.');
-        setSubmitState('error');
-      }
-    } catch {
-      setApiErrorMessage('Network error. Please try again.');
-      setSubmitState('error');
-    }
+  const handleForceError = async () => {
+    if (submitState === 'loading') return;
+    fillTestData();
+    await doSubmit(TEST_DATA, '/api/three-v-deliveries?error=true');
   };
 
   // Submit button click listener
@@ -323,6 +414,20 @@ export default function DeliveryConfigurationCreateRoute() {
     if (!btn) return;
     btn.addEventListener('clickEventOutput', handleSubmit);
     return () => btn.removeEventListener('clickEventOutput', handleSubmit);
+  });
+
+  useEffect(() => {
+    const btn = fillFormBtnRef.current;
+    if (!btn) return;
+    btn.addEventListener('clickEventOutput', fillTestData);
+    return () => btn.removeEventListener('clickEventOutput', fillTestData);
+  });
+
+  useEffect(() => {
+    const btn = forceErrorBtnRef.current;
+    if (!btn) return;
+    btn.addEventListener('clickEventOutput', handleForceError);
+    return () => btn.removeEventListener('clickEventOutput', handleForceError);
   });
 
   const updateField = (field: string, value: unknown) =>
@@ -410,28 +515,22 @@ export default function DeliveryConfigurationCreateRoute() {
             </atp-input>
 
             {/* Delivery location */}
-            <div className="form-field">
-              <label htmlFor="deliveryLocation">
-                Delivery location <span aria-hidden="true">*</span>
-              </label>
-              <select
+            <atp-input required>
+              <label slot="label" htmlFor="deliveryLocation">Delivery location</label>
+              <input
                 id="deliveryLocation"
-                value={form.deliveryLocation}
-                onChange={(e) =>
-                  updateField('deliveryLocation', e.target.value as DeliveryLocation)
-                }
-              >
-                {LOCATION_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                type="text"
+                readOnly
+                value={LOCATION_ITEMS.find((item) => item.id === form.deliveryLocation)?.name ?? ''}
+                onClick={() => setLocationMenuVisible((prev) => !prev)}
+              />
+              <atp-dropdown slot="dropdown" ref={locationDropdownRef}></atp-dropdown>
+            </atp-input>
 
             {/* Conditional: email fields */}
             {form.deliveryLocation === 'email' && (
-              <div className="conditional-section">
+              <atp-card density="default">
+                <div className="conditional-fields">
                 <atp-input ref={recipientsRef} required>
                   <label slot="label" htmlFor="recipients">Recipient email</label>
                   <input
@@ -482,12 +581,14 @@ export default function DeliveryConfigurationCreateRoute() {
                     <span slot="help-text" className="field-error">This field is required.</span>
                   )}
                 </atp-input>
-              </div>
+                </div>
+              </atp-card>
             )}
 
             {/* Conditional: cloud fields */}
             {form.deliveryLocation !== 'email' && (
-              <div className="conditional-section">
+              <atp-card density="default">
+                <div className="conditional-fields">
                 <atp-input ref={bucketRef} required>
                   <label slot="label" htmlFor="bucket">Bucket</label>
                   <input
@@ -538,7 +639,8 @@ export default function DeliveryConfigurationCreateRoute() {
                     <span slot="help-text" className="field-error">This field is required.</span>
                   )}
                 </atp-input>
-              </div>
+                </div>
+              </atp-card>
             )}
 
             {/* Delivery file name */}
@@ -571,7 +673,8 @@ export default function DeliveryConfigurationCreateRoute() {
 
             {/* Conditional: combine files sub-section */}
             {form.combineFiles && (
-              <div className="conditional-section">
+              <atp-card density="default">
+                <div className="conditional-fields">
                 <atp-input required>
                   <label slot="label" htmlFor="maximumFileSize">Maximum file size (MB)</label>
                   <input
@@ -587,7 +690,8 @@ export default function DeliveryConfigurationCreateRoute() {
                   label="Check file size post compression"
                   name="compression"
                 ></atp-checkbox>
-              </div>
+                </div>
+              </atp-card>
             )}
 
             {/* Place files into specific delivery directory */}
@@ -606,20 +710,50 @@ export default function DeliveryConfigurationCreateRoute() {
             {/* Success / Error alerts */}
             {submitState === 'success' && (
               <atp-alert
+                ref={alertRef}
                 label="Delivery configuration created successfully."
                 appearance="page"
                 color="info"
+                hasClose
               ></atp-alert>
             )}
             {submitState === 'error' && (
-              <atp-alert label={apiErrorMessage} appearance="page" color="danger"></atp-alert>
+              <atp-alert
+                ref={alertRef}
+                label={apiErrorMessage}
+                appearance="page"
+                color="danger"
+                hasClose
+              ></atp-alert>
             )}
 
             {/* Submit */}
             <div className="form-actions">
-              <atp-button ref={submitBtnRef} label="Save" appearance="fill"></atp-button>
+              <atp-button
+                ref={submitBtnRef}
+                label={submitState === 'success' ? 'Saved' : 'Save'}
+                isLoading={submitState === 'loading'}
+                disabled={submitState === 'loading'}
+                appearance="fill"
+              ></atp-button>
+              <atp-button
+                ref={fillFormBtnRef}
+                label="Fill form"
+                appearance="outline"
+                disabled={submitState === 'loading'}
+              ></atp-button>
+              <atp-button
+                ref={forceErrorBtnRef}
+                label="Trigger error"
+                appearance="outline"
+                disabled={submitState === 'loading'}
+              ></atp-button>
+              <atp-button
+                label="Get deliveries"
+                appearance="outline"
+                onClick={fetchDeliveries}
+              ></atp-button>
             </div>
-
           </div>
         </div>
       </div>
