@@ -1,238 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFormik } from 'formik';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
-import { z } from 'zod';
-import type { BreadcrumbItem, MenuListItem, SidebarItem } from '@atpco/atp-web';
-
-type DeliveryLocation = 'email' | 'gcloud' | 'azure' | 's3';
-
-type FormValues = {
-  deliveryName: string;
-  customer: string;
-  deliveryFrequency: string;
-  last_file_suffix: string;
-  deliveryLocation: DeliveryLocation;
-  recipients: string;
-  subject: string;
-  body: string;
-  bucket: string;
-  credentialsFile: string;
-  upload_option: string;
-  deliveryFileName: string;
-  combineFiles: boolean;
-  maximumFileSize: number;
-  compression: boolean;
-  specificDirectory: boolean;
-  virusScan: boolean;
-  encrypt: boolean;
-};
-
-const SIDEBAR_ITEMS: SidebarItem[] = [
-  { name: 'Collections', id: 'collections', route: 'collections', children: [] },
-  {
-    name: 'Manage',
-    id: 'manage',
-    route: 'manage',
-    children: [
-      { name: 'Input configurations', id: 'input-configurations', route: 'input-configurations' },
-      {
-        name: 'Output configurations',
-        id: 'output-configurations',
-        route: 'output-configurations',
-      },
-      {
-        name: 'Packaging configurations',
-        id: 'packaging-configurations',
-        route: 'packaging-configurations',
-      },
-      {
-        name: 'Delivery configuration',
-        id: 'delivery-configuration',
-        route: 'delivery-configuration',
-      },
-    ],
-  },
-];
-
-const BREADCRUMB_ITEMS: BreadcrumbItem[] = [
-  { name: 'Manage', href: '/manage' },
-  { name: 'Delivery configuration', href: '/delivery-configuration' },
-];
-
-const LOCATION_ITEMS: MenuListItem[] = [
-  { id: 'email', name: 'Email' },
-  { id: 'gcloud', name: 'GCloud' },
-  { id: 'azure', name: 'Azure' },
-  { id: 's3', name: 'S3' },
-];
-
-const TEST_DATA: FormValues = {
-  deliveryName: 'Daily Sales Export',
-  customer: 'Acme Travel',
-  deliveryFrequency: '20 * * * *',
-  last_file_suffix: '_20260214',
-  deliveryLocation: 'email',
-  recipients: 'ops@example.com',
-  subject: 'Delivery Complete',
-  body: 'Your delivery is complete.',
-  bucket: '',
-  credentialsFile: '',
-  upload_option: '',
-  deliveryFileName: 'sales-export',
-  combineFiles: true,
-  maximumFileSize: 5,
-  compression: true,
-  specificDirectory: true,
-  virusScan: true,
-  encrypt: true,
-};
-
-const CRON_MONTH_NAMES: Record<string, string> = {
-  JAN: '1', FEB: '2', MAR: '3', APR: '4', MAY: '5', JUN: '6',
-  JUL: '7', AUG: '8', SEP: '9', OCT: '10', NOV: '11', DEC: '12',
-};
-
-const CRON_DOW_NAMES: Record<string, string> = {
-  SUN: '0', MON: '1', TUE: '2', WED: '3', THU: '4', FRI: '5', SAT: '6',
-};
-
-function normalizeCronField(field: string, names: Record<string, string>): string {
-  return field.replace(/[A-Za-z]+/g, (m) => names[m.toUpperCase()] ?? m);
-}
-
-function isValidCronField(field: string, min: number, max: number): boolean {
-  if (field === '*') return true;
-  if (field.includes('/')) {
-    const [base, step] = field.split('/');
-    const stepNum = Number(step);
-    if (!step || isNaN(stepNum) || stepNum < 1) return false;
-    return base === '*' || isValidCronField(base, min, max);
-  }
-  if (field.includes(',')) {
-    return field.split(',').every((part) => isValidCronField(part, min, max));
-  }
-  if (field.includes('-')) {
-    const [a, b] = field.split('-').map(Number);
-    return !isNaN(a) && !isNaN(b) && a >= min && b <= max && a <= b;
-  }
-  const n = Number(field);
-  return !isNaN(n) && Number.isInteger(n) && n >= min && n <= max;
-}
-
-function isValidCron(value: string): boolean {
-  const parts = value.trim().split(/\s+/);
-  if (parts.length !== 5) return false;
-  // [minute, hour, day-of-month, month, day-of-week]
-  const ranges: [number, number][] = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]];
-  const nameMap: (Record<string, string> | null)[] = [null, null, null, CRON_MONTH_NAMES, CRON_DOW_NAMES];
-  return parts.every((part, i) => {
-    const normalized = nameMap[i] ? normalizeCronField(part, nameMap[i]!) : part;
-    return isValidCronField(normalized, ranges[i][0], ranges[i][1]);
-  });
-}
-
-// On blur: insert spaces between fields if the user typed a compact expression (e.g. "20****")
-function formatCronInput(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed || /\s/.test(trimmed)) return trimmed.replace(/\s+/g, ' ');
-  // Tokenize: each token is either `*`, `*/N`, or a non-* non-space sequence
-  const tokens: string[] = [];
-  const re = /(\*(?:\/\d+)?|[^\s*]+)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(trimmed)) !== null && tokens.length < 5) tokens.push(m[1]);
-  // Only reformat if the tokens fill the entire string (no leftover characters)
-  return tokens.length === 5 && tokens.join('').length === trimmed.length
-    ? tokens.join(' ')
-    : trimmed;
-}
-
-const schema = z
-  .object({
-    deliveryName: z.string().min(1, 'Required'),
-    customer: z.string().min(1, 'Required'),
-    deliveryFrequency: z.string().refine((val) => !val || isValidCron(val), 'Must be a valid 5-field cron expression (e.g. "20 * * * *")').optional(),
-    last_file_suffix: z.string().regex(/^[a-zA-Z0-9_-]*$/, 'Only letters, numbers, -, and _ allowed').optional(),
-    deliveryLocation: z.enum(['email', 'gcloud', 'azure', 's3']),
-    recipients: z.string().optional(),
-    subject: z.string().optional(),
-    body: z.string().optional(),
-    bucket: z.string().optional(),
-    credentialsFile: z.string().optional(),
-    upload_option: z.string().optional(),
-    deliveryFileName: z.string().min(1, 'Required').regex(/^[a-zA-Z0-9_-]+$/, 'Only letters, numbers, -, and _ allowed'),
-    maximumFileSize: z.number(),
-    combineFiles: z.boolean(),
-    compression: z.boolean(),
-    specificDirectory: z.boolean(),
-    virusScan: z.boolean(),
-    encrypt: z.boolean(),
-  });
-
-function buildPayload(values: FormValues): Record<string, unknown> {
-  const payload: Record<string, unknown> = {
-    deliveryName: values.deliveryName,
-    customer: values.customer,
-    deliveryLocation: values.deliveryLocation,
-    deliveryFileName: values.deliveryFileName,
-    combineFiles: values.combineFiles,
-    specificDirectory: values.specificDirectory,
-    virusScan: values.virusScan,
-    encrypt: values.encrypt,
-  };
-
-  if (values.deliveryFrequency) payload['deliveryFrequency'] = values.deliveryFrequency;
-  if (values.last_file_suffix) payload['last_file_suffix'] = values.last_file_suffix;
-
-  if (values.deliveryLocation === 'email') {
-    payload['recipients'] = values.recipients;
-    payload['subject'] = values.subject;
-    payload['body'] = values.body;
-  } else {
-    payload['bucket'] = values.bucket;
-    payload['credentialsFile'] = values.credentialsFile;
-    payload['upload_option'] = values.upload_option;
-  }
-
-  if (values.combineFiles) {
-    payload['maximumFileSize'] = values.maximumFileSize;
-    payload['compression'] = values.compression;
-  }
-
-  return payload;
-}
-
-async function submitToApi(
-  values: FormValues,
-  endpoint: string,
-): Promise<{ ok: boolean; message?: string }> {
-  const [res] = await Promise.all([
-    fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildPayload(values)),
-    }),
-    new Promise((resolve) => setTimeout(resolve, 700)),
-  ]);
-
-  if (res.ok) {
-    return { ok: true };
-  }
-  const data = await res.json();
-  return { ok: false, message: data.message };
-}
-
-function fetchDeliveries() {
-  fetch('/api/three-v-deliveries')
-    .then((r) => r.json())
-    .then(({ data }) => {
-      const sorted = [...data].sort(
-        (a: { acceptedAt: string }, b: { acceptedAt: string }) =>
-          new Date(a.acceptedAt).getTime() - new Date(b.acceptedAt).getTime(),
-      );
-      console.log('Existing delivery configurations (oldest → newest):', sorted);
-    })
-    .catch(console.error);
-}
+import type { FormValues } from './types';
+import { SIDEBAR_ITEMS, BREADCRUMB_ITEMS, LOCATION_ITEMS, TEST_DATA } from './constants';
+import { schema, formatCronInput } from './schema';
+import { submitToApi, fetchDeliveries } from './api';
+import { EmailFields } from './components/EmailFields';
+import { CloudFields } from './components/CloudFields';
 
 export default function DeliveryConfigurationCreateRoute() {
   const [activeSidebarId, setActiveSidebarId] = useState('delivery-configuration');
@@ -356,7 +130,6 @@ export default function DeliveryConfigurationCreateRoute() {
     el.closeOnClickOutside = true;
   }, [formik.values.deliveryLocation, locationMenuVisible]);
 
-
   // Sync checkbox `checked` properties to web components — consolidated
   useEffect(() => {
     const pairs: Array<[React.RefObject<HTMLElementTagNameMap['atp-checkbox'] | null>, boolean]> = [
@@ -401,7 +174,6 @@ export default function DeliveryConfigurationCreateRoute() {
     }
   }, [formik.status]);
 
-  // Close alert when user clicks the X button
   const handleForceError = async () => {
     if (formik.isSubmitting) return;
     formik.setSubmitting(true);
@@ -570,124 +342,22 @@ export default function DeliveryConfigurationCreateRoute() {
 
             {/* Conditional: email fields */}
             {formik.values.deliveryLocation === 'email' && (
-              <atp-card density="default">
-                <div className="conditional-fields">
-                  <atp-input ref={recipientsRef} required>
-                    <label slot="label" htmlFor="recipients">Recipient email</label>
-                    <input
-                      id="recipients"
-                      aria-label="Recipient email"
-                      name="recipients"
-                      type="text"
-                      value={formik.values.recipients}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                    />
-                    {formik.touched.recipients && formik.errors.recipients && (
-                      <span slot="help-text" className="field-error">
-                        {String(formik.errors.recipients)}
-                      </span>
-                    )}
-                  </atp-input>
-
-                  <atp-input ref={subjectRef} required>
-                    <label slot="label" htmlFor="subject">Subject</label>
-                    <input
-                      id="subject"
-                      aria-label="Subject"
-                      name="subject"
-                      type="text"
-                      value={formik.values.subject}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                    />
-                    {formik.touched.subject && formik.errors.subject && (
-                      <span slot="help-text" className="field-error">
-                        {String(formik.errors.subject)}
-                      </span>
-                    )}
-                  </atp-input>
-
-                  <atp-input ref={bodyRef} required textarea>
-                    <label slot="label" htmlFor="body">Body</label>
-                    <textarea
-                      id="body"
-                      aria-label="Body"
-                      name="body"
-                      rows={3}
-                      value={formik.values.body}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                    />
-                    {formik.touched.body && formik.errors.body && (
-                      <span slot="help-text" className="field-error">
-                        {String(formik.errors.body)}
-                      </span>
-                    )}
-                  </atp-input>
-                </div>
-              </atp-card>
+              <EmailFields
+                recipientsRef={recipientsRef}
+                subjectRef={subjectRef}
+                bodyRef={bodyRef}
+                formik={formik}
+              />
             )}
 
             {/* Conditional: cloud fields */}
             {formik.values.deliveryLocation !== 'email' && (
-              <atp-card density="default">
-                <div className="conditional-fields">
-                  <atp-input ref={bucketRef} required>
-                    <label slot="label" htmlFor="bucket">Bucket</label>
-                    <input
-                      id="bucket"
-                      aria-label="Bucket name"
-                      name="bucket"
-                      type="text"
-                      value={formik.values.bucket}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                    />
-                    {formik.touched.bucket && formik.errors.bucket && (
-                      <span slot="help-text" className="field-error">
-                        {String(formik.errors.bucket)}
-                      </span>
-                    )}
-                  </atp-input>
-
-                  <atp-input ref={credentialsFileRef} required>
-                    <label slot="label" htmlFor="credentialsFile">Credentials file</label>
-                    <input
-                      id="credentialsFile"
-                      aria-label="Credentials file path"
-                      name="credentialsFile"
-                      type="text"
-                      value={formik.values.credentialsFile}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                    />
-                    {formik.touched.credentialsFile && formik.errors.credentialsFile && (
-                      <span slot="help-text" className="field-error">
-                        {String(formik.errors.credentialsFile)}
-                      </span>
-                    )}
-                  </atp-input>
-
-                  <atp-input ref={uploadOptionRef} required>
-                    <label slot="label" htmlFor="uploadOption">Upload option</label>
-                    <input
-                      id="uploadOption"
-                      aria-label="Upload option"
-                      name="upload_option"
-                      type="text"
-                      value={formik.values.upload_option}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                    />
-                    {formik.touched.upload_option && formik.errors.upload_option && (
-                      <span slot="help-text" className="field-error">
-                        {String(formik.errors.upload_option)}
-                      </span>
-                    )}
-                  </atp-input>
-                </div>
-              </atp-card>
+              <CloudFields
+                bucketRef={bucketRef}
+                credentialsFileRef={credentialsFileRef}
+                uploadOptionRef={uploadOptionRef}
+                formik={formik}
+              />
             )}
 
             {/* Delivery file name */}
