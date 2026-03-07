@@ -1,10 +1,52 @@
 import type { HTMLAttributes } from 'react';
+import type { BreadcrumbItem, MenuListItem, SidebarItem } from '@atpco/atp-web';
 
 declare global {
+  interface AtpHeader extends HTMLElement {
+    label: string;
+    org: string;
+  }
+
+  interface AtpSidebar extends HTMLElement {
+    items: SidebarItem[];
+    activeId: string;
+    outputNavigationEvents: boolean;
+  }
+
+  interface AtpBreadcrumbs extends HTMLElement {
+    itemsList: BreadcrumbItem[];
+  }
+
+  interface AtpInput extends HTMLElement {
+    isError: boolean;
+  }
+
+  interface AtpCheckbox extends HTMLElement {
+    checked: boolean;
+  }
+
+  interface AtpDropdown extends HTMLElement {
+    itemsList: MenuListItem[];
+    activeIds: string[];
+    isMenuVisible: boolean;
+    closeOnClickOutside: boolean;
+  }
+
+  interface HTMLElementTagNameMap {
+    'atp-header': AtpHeader;
+    'atp-sidebar': AtpSidebar;
+    'atp-breadcrumbs': AtpBreadcrumbs;
+    'atp-input': AtpInput;
+    'atp-checkbox': AtpCheckbox;
+    'atp-dropdown': AtpDropdown;
+  }
+
   namespace JSX {
     interface IntrinsicElements {
       'atp-header': HTMLAttributes<HTMLElement>;
-      'atp-sidebar': HTMLAttributes<HTMLElement>;
+      'atp-sidebar': HTMLAttributes<HTMLElement> & {
+        onNavigationEventOutput?: (event: CustomEvent<{ id?: string }>) => void;
+      };
       'atp-breadcrumbs': HTMLAttributes<HTMLElement>;
       'atp-card': HTMLAttributes<HTMLElement> & {
         density?: 'default' | 'compact' | 'wide';

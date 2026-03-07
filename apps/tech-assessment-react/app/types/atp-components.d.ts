@@ -28,6 +28,7 @@ declare global {
         activeId?: string;
         outputNavigationEvents?: boolean;
         ref?: React.Ref<AtpSidebarElement>;
+        onNavigationEventOutput?: (event: CustomEvent<{ id?: string }>) => void;
       };
       "atp-breadcrumbs": React.HTMLAttributes<AtpBreadcrumbsElement> & {
         itemsList?: any[];
@@ -48,6 +49,7 @@ declare global {
         disabled?: boolean;
         bordered?: boolean;
         ref?: React.Ref<HTMLElement>;
+        ariaLabel?: string;
       };
       "atp-button": React.HTMLAttributes<HTMLElement> & {
         label?: string;
@@ -82,6 +84,8 @@ declare global {
       "atp-dropdown": React.HTMLAttributes<HTMLElement> & {
         slot?: string;
         ref?: React.Ref<HTMLElement>;
+        onItemSelectedOutput?: (event: CustomEvent<string[]>) => void;
+        onDropdownClosedOutput?: (event: CustomEvent) => void;
       };
     }
   }

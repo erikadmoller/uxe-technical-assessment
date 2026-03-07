@@ -22,11 +22,14 @@
     "@atpco/atp-web": "file:./vendor/atp-web/atpco-atp-web-0.17.0.tgz",
     "@react-router/node": "^7.12.0",
     "@react-router/serve": "^7.12.0",
+    "formik": "^2.4.9",
     "isbot": "^4.4.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router": "^7.12.0",
-    "rxjs": "~7.8.0"
+    "rxjs": "~7.8.0",
+    "zod": "^4.3.6",
+    "zod-formik-adapter": "^2.0.0"
   },
   "devDependencies": {
     "@angular-devkit/core": "~21.1.0",
